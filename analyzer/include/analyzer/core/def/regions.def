@@ -1,0 +1,47 @@
+//===- regions.def ----------------------------------------------------===//
+//
+// Copyright (c) 2024 Junjie Shen
+//
+// see https://github.com/shenjunjiekoda/hunter/blob/main/LICENSE for
+// license information.
+//
+//===------------------------------------------------------------------===//
+//
+//  This header defines the metadata of typed memory regions.
+//
+//===------------------------------------------------------------------===//
+
+#ifndef REGION_DEF
+/// Create a new region metadata.
+///    
+/// @param KIND The kind of the region.
+/// @param DESC The description of the region kind.
+/// @param PARENT The parent region of the region kind.
+#define REGION_DEF(KIND, DESC, PARENT)
+#endif
+
+REGION_DEF(SymRegion, "A symbolic memory region.", None)
+REGION_DEF(AllocaRegion, "An untyped alloca region.", None)
+REGION_DEF(TypedRegion, "A typed memory region.", None)
+  REGION_DEF(TypedRegionBegin, "TypedRegionBegin.", None)
+    REGION_DEF(BlockDataRegion, "The block instance region(code+data).", TypedRegion)
+    REGION_DEF(CodeTextRegion, "The code text region.", TypedRegion)
+      REGION_DEF(CodeTextRegionBegin, "CodeTextRegionBegin.", None)
+        REGION_DEF(FunctionCodeRegion, "The function code text region.", CodeTextRegion)
+        REGION_DEF(BlockCodeRegion, "The block code text region.", CodeTextRegion)
+      REGION_DEF(CodeTextRegionEnd, "CodeTextRegionEnd.", None)
+    REGION_DEF(TypedValueRegion, "The region which has a typed value.", TypedRegion)
+      REGION_DEF(TypedValueRegionBegin, "TypedValueRegionBegin.", None)
+        REGION_DEF(ThisObjRegion, "The current object region.", TypedValueRegion)
+        REGION_DEF(BaseObjRegion, "The base object region of a derived object.", TypedValueRegion)
+        REGION_DEF(TempObjRegion, "A temporary object region.", TypedValueRegion)
+        REGION_DEF(StringLitRegion, "A string literal region.", TypedValueRegion)
+        REGION_DEF(ElemRegion, "An element region.", TypedValueRegion)
+        REGION_DEF(DeclRegion, "A declaration region.", TypedValueRegion)
+          REGION_DEF(DeclRegionBegin, "DeclRegionBegin.", None)
+            REGION_DEF(VarRegion, "A non-argument variable region.", DeclRegion)
+            REGION_DEF(ArgRegion, "An argument region.", DeclRegion)
+            REGION_DEF(FieldRegion, "A field region.", DeclRegion)
+          REGION_DEF(DeclRegionEnd, "DeclRegionEnd.", None)
+      REGION_DEF(TypedValueRegionEnd, "TypedValueRegionEnd.", None)
+  REGION_DEF(TypedRegionEnd, "TypedRegionEnd.", None)

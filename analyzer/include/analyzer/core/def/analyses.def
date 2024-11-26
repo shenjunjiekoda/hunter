@@ -1,0 +1,28 @@
+//===- analyses.def ---------------------------------------------------===//
+//
+// Copyright (c) 2024 Junjie Shen
+//
+// see https://github.com/shenjunjiekoda/hunter/blob/main/LICENSE for
+// license information.
+//
+//===------------------------------------------------------------------===//
+//
+//  This header defines the metadata of analyses.
+//
+//===------------------------------------------------------------------===//
+
+#ifndef ANALYSIS_DEF
+/// Create a new analysis metadata.
+///    
+/// @param KIND The kind of the analysis.
+/// @param NAME The name of the analysis.
+/// @param ID The unique ID of the analysis.
+/// @param DESC The description of the analysis.
+#define ANALYSIS_DEF(KIND, NAME, ID, DESC)
+#endif
+
+ANALYSIS_DEF(SymbolResolver, "core-symbol-resolver", 0, "Resolves symbols in the program.")
+ANALYSIS_DEF(NumericalAnalysis, "core-numerical", 1, "The numerical analysis.")
+ANALYSIS_DEF(PointerAnalysis, "core-pointer", 2, "The pointer analysis.")
+ANALYSIS_DEF(DemoAnalysis, "demo-analysis", 3, "A demo analysis.")
+ANALYSIS_DEF(StatePrinter, "debug-state-printer", 4, "A state printer for debugging.")

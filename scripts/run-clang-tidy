@@ -1,0 +1,225 @@
+#!/usr/bin/python3
+
+# ===- run-clang-tidy ------------------------------------------------===#
+#
+# Copyright (c) 2024 Junjie Shen
+#
+# see https://github.com/shenjunjiekoda/hunter/blob/main/LICENSE for
+# license information.
+#
+# ===------------------------------------------------------------------===#
+#
+#  This script runs clang-tidy on the whole repository using
+#  compile_commands.json.
+#
+# ===------------------------------------------------------------------===#
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from threading import Lock
+
+RESET_COLOR = "\033[0m"
+BLUE = "\033[34m"
+GREEN = "\033[32m"
+RED = "\033[31m"
+YELLOW = "\033[33m"
+GRAY = "\033[37m"
+
+
+def print_progress_bar(total, completed, lock):
+    """Print the progress bar with color."""
+    percent = (completed / total) * 100
+    bar_length = 40
+    filled_length = int(bar_length * completed // total)
+    bar = (
+        GREEN
+        + "█" * filled_length
+        + RED
+        + "-" * (bar_length - filled_length)
+        + RESET_COLOR
+    )
+    with lock:
+        sys.stdout.write(
+            f"\033[1A\rProgress: |{bar}| {YELLOW}{percent:.1f}% Complete ({completed}/{total}){RESET_COLOR}\n"
+        )
+        sys.stdout.flush()
+
+
+def find_clang_tidy(executable):
+    """Find the clang-tidy executable in the PATH."""
+    path = Path(executable)
+    if path.is_file() and os.access(path, os.X_OK):
+        return path
+    for dir in map(Path, os.environ["PATH"].split(os.pathsep)):
+        full_path = dir / executable
+        if full_path.is_file() and os.access(full_path, os.X_OK):
+            return full_path
+    return None
+
+
+def run_clang_tidy_on_file(
+    clang_tidy,
+    build_dir,
+    file_path,
+    header_filter,
+    config_file,
+    print_detail,
+    error_log,
+    lock,
+):
+    """Run clang-tidy on a single file."""
+    command = [
+        str(clang_tidy),
+        str(file_path),
+        "-p",
+        str(build_dir),
+        "-header-filter=" + header_filter,
+    ]
+    if config_file:
+        command.append(f"--config-file={config_file}")
+    if print_detail:
+        print(f"Running command: {' '.join(command)}")
+    try:
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        if print_detail:
+            print(f"std output for {file_path}:\n{result.stdout}")
+        if print_detail and result.stderr:
+            print(f"Standard Error for {file_path}:\n{result.stderr}", file=sys.stderr)
+    except subprocess.CalledProcessError as e:
+        with lock:
+            error_log.append((file_path, e.stdout, e.stderr, " ".join(command)))
+
+
+# Spinner function
+def spinner(lock, is_running):
+    spinner_animation = ["|", "/", "-", "\\"]
+    idx = 0
+    while is_running():
+        with lock:
+            sys.stdout.write(
+                f"\0337\033[2A\033[K{BLUE}{spinner_animation[idx % len(spinner_animation)]} Please wait...{RESET_COLOR}\0338"
+            )
+            sys.stdout.flush()
+            idx += 1
+        time.sleep(0.1)
+    with lock:
+        sys.stdout.write("\0337\033[2A\033[K\0338")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run clang-tidy on the whole repository using compile_commands.json"
+    )
+    parser.add_argument(
+        "--build-dir",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / "build",
+        help="Path to the build directory containing compile_commands.json",
+    )
+    parser.add_argument(
+        "--clang-tidy", default="clang-tidy", help="Path to the clang-tidy binary"
+    )
+    parser.add_argument(
+        "--config-file",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / ".clang-tidy",
+        help="Path to the .clang-tidy config file",
+    )
+    parser.add_argument(
+        "--header-filter",
+        type=str,
+        default="*hunter*",
+        help="Regex to specify which headers should be analyzed",
+    )
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=1,
+        help="Number of tidy instances to be run in parallel.",
+    )
+    parser.add_argument(
+        "--print-detail", type=bool, default=False, help="Print the running details."
+    )
+    args = parser.parse_args()
+
+    compile_commands_path = args.build_dir / "compile_commands.json"
+    if not compile_commands_path.is_file():
+        print(f"Error: '{compile_commands_path}' is not a file", file=sys.stderr)
+        sys.exit(1)
+
+    clang_tidy = find_clang_tidy(args.clang_tidy)
+    if not clang_tidy:
+        print(f"Error: '{args.clang_tidy}' not found in PATH", file=sys.stderr)
+        sys.exit(1)
+
+    with open(compile_commands_path) as f:
+        compile_commands = json.load(f)
+
+    files_to_process = [Path(entry["file"]) for entry in compile_commands]
+
+    lock = Lock()
+    completed_tasks = 0
+    total_tasks = len(files_to_process)
+    error_log = []
+
+    print("\n")  # Ensure there's a blank line for the spinner
+    print_progress_bar(total_tasks, completed_tasks, lock)
+
+    # Spinner control
+    spinner_running = True
+
+    def is_spinner_running():
+        return spinner_running
+
+    spinner_thread = threading.Thread(target=spinner, args=(lock, is_spinner_running))
+    spinner_thread.start()
+
+    with ThreadPoolExecutor(max_workers=args.jobs) as executor:
+        future_to_file = {
+            executor.submit(
+                run_clang_tidy_on_file,
+                clang_tidy,
+                args.build_dir,
+                file,
+                args.header_filter,
+                args.config_file,
+                args.print_detail,
+                error_log,
+                lock,
+            ): file
+            for file in files_to_process
+        }
+        for future in as_completed(future_to_file):
+            completed_tasks += 1
+            print_progress_bar(total_tasks, completed_tasks, lock)
+            future.result()
+
+    spinner_running = False
+    spinner_thread.join()
+
+    print(f"{YELLOW}Total {total_tasks} files processed: {RESET_COLOR}")
+    print(f"Passed: {GREEN}{completed_tasks} √{RESET_COLOR}")
+    print(f"Error : {RED}{len(error_log)} ×{RESET_COLOR}")
+
+    if error_log:
+        idx = 0
+        for file, out, error, command in error_log:
+            idx += 1
+            print("=" * 80)
+            print(f"\n# {RED}Error {idx}: {file}{RESET_COLOR}")
+            print(f"\n$ {command}")
+            print(f"stderr:\n{out}")
+            print(f"stderr:\n{error}")
+    return len(error_log) != 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

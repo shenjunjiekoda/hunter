@@ -1,0 +1,25 @@
+//===- checkers.def ---------------------------------------------------===//
+//
+// Copyright (c) 2024 Junjie Shen
+//
+// see https://github.com/shenjunjiekoda/hunter/blob/main/LICENSE for
+// license information.
+//
+//===------------------------------------------------------------------===//
+//
+//  This header defines the metadata of checkers.
+//
+//===------------------------------------------------------------------===//
+
+#ifndef CHECKER_DEF
+/// Create a new analysis metadata.
+///    
+/// @param KIND The kind of the checker.
+/// @param NAME The name of the checker.
+/// @param ID The unique ID of the checker.
+/// @param DESC The description of the checker.
+#define CHECKER_DEF(KIND, NAME, ID, DESC)
+#endif
+
+CHECKER_DEF(DemoChecker, "demo-checker", 0, "A demo checker.")
+CHECKER_DEF(DebugInspection, "debug-inspection", 1, "The expression inspection checker.")

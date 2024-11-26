@@ -1,0 +1,48 @@
+//===- symbols.def ----------------------------------------------------===//
+//
+// Copyright (c) 2024 Junjie Shen
+//
+// see https://github.com/shenjunjiekoda/hunter/blob/main/LICENSE for
+// license information.
+//
+//===------------------------------------------------------------------===//
+//
+//  This header defines the metadata of symbols.
+//
+//===------------------------------------------------------------------===//
+
+#ifndef SYMBOL
+#define SYMBOL(Id, Parent)
+#endif
+
+#ifndef ABSTRACT_SYMBOL
+#define ABSTRACT_SYMBOL(Id, Parent)
+#endif
+
+#ifndef SYMBOL_RANGE
+#define SYMBOL_RANGE(Id, First, Last)
+#endif
+
+SYMBOL(UnarySymExpr, SymExpr)
+
+ABSTRACT_SYMBOL(BinarySymExpr, SymExpr)
+  SYMBOL(IntSymExpr, BinarySymExpr)
+  SYMBOL(SymIntExpr, BinarySymExpr)
+  SYMBOL(FloatSymExpr, BinarySymExpr)
+  SYMBOL(SymFloatExpr, BinarySymExpr)
+  SYMBOL(SymSymExpr, BinarySymExpr)
+SYMBOL_RANGE(BINARYSYMEXPRS, IntSymExprKind, SymSymExprKind)
+
+SYMBOL(SymbolCast, SymExpr)
+
+ABSTRACT_SYMBOL(SymbolData, SymExpr)
+  SYMBOL(SymbolConjured, SymbolData)
+  SYMBOL(SymbolDerived, SymbolData)
+  SYMBOL(SymbolExtent, SymbolData)
+  SYMBOL(SymbolMetadata, SymbolData)
+  SYMBOL(SymbolRegionValue, SymbolData)
+SYMBOL_RANGE(SYMBOLS, SymbolConjuredKind, SymbolRegionValueKind)
+
+#undef SYMBOL
+#undef ABSTRACT_SYMBOL
+#undef SYMBOL_RANGE

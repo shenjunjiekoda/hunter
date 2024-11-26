@@ -1,0 +1,26 @@
+---
+BasedOnStyle: google
+---
+AccessModifierOffset: -2
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 80
+DerivePointerAlignment: false
+IncludeBlocks: Preserve
+# Indent preprocessor directives
+IndentPPDirectives: AfterHash
+IndentWidth: 4
+Language: Cpp
+PenaltyBreakBeforeFirstCallParameter: 5000
+PenaltyReturnTypeOnItsOwnLine: 500
+PointerAlignment: Left
+ReflowComments: true
+# Disable formatting options which may break tests.
+SortIncludes: true
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: true
+Standard: c++20

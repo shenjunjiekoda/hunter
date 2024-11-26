@@ -1,2 +1,3 @@
 # hunter
-C/C++ code analysis based on LLVM IR.
+
+C/C++ code summary-based analysis based on HIL.
