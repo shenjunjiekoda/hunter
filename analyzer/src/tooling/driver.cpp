@@ -17,6 +17,7 @@
 #include "analyzer/tooling/driver.hpp"
 #include "analyzer/tooling/module.hpp"
 #include "analyzer/tooling/reporter.hpp"
+#include "common/util/llvm.hpp"
 #include "common/util/vfs.hpp"
 
 #include <clang/Tooling/Tooling.h>
@@ -184,6 +185,14 @@ std::vector< HunterDiagnostic > HunterDriver::run() {
                          m_input_files,
                          std::make_shared< PCHContainerOperations >(),
                          m_base_fs);
+
+    clang::tooling::CommandLineArguments clang_include{
+        llvm_util::get_clang_include_dir()};
+    clang_tool.appendArgumentsAdjuster(
+        clang::tooling::
+            getInsertArgumentAdjuster(clang_include,
+                                      clang::tooling::ArgumentInsertPosition::
+                                          END));
 
     HunterDiagnosticConsumer diag_consumer(m_ctx);
     DiagnosticsEngine diag_engine(new DiagnosticIDs(),

@@ -110,7 +110,7 @@ void HunterDiagnosticConsumer::HandleDiagnostic(
                 break;
         }
 
-        m_diags.emplace_back(*check, level, m_context.get_cuurent_build_dir());
+        m_diags.emplace_back(*check, level, m_context.get_current_build_dir());
     }
     HunterDiagnosticRenderer renderer(m_context.get_lang_options(),
                                       &m_context.get_diagnostic_engine()

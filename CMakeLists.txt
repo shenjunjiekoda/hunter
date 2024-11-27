@@ -46,6 +46,10 @@ set(COMMON_FOUND TRUE)
 set(COMMON_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/common/include")
 set(COMMON_LIB hunterCommonLib)
 
+# Add cg
+message(STATUS "Including cg")
+add_subdirectory(cg)
+
 # Add analyzer
 message(STATUS "Including analyzer")
 add_subdirectory(analyzer)

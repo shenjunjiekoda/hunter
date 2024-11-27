@@ -24,6 +24,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/Process.h>
+#include <llvm/Support/Signals.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/WithColor.h>
 #include <llvm/Support/raw_ostream.h>
@@ -37,7 +38,7 @@ using namespace llvm;
 using namespace clang;
 using namespace clang::tooling;
 using namespace hunter;
-using namespace hunter::cl_opts;
+using namespace hunter::analyzer::cl_opts;
 
 using ErrCode = uint8_t;
 constexpr ErrCode NormalExit = 0U;
@@ -70,7 +71,9 @@ llvm::IntrusiveRefCntPtr< llvm::vfs::OverlayFileSystem > get_vfs(
 
 analyzer::AnalyzerOptions forward_to_hunter_analyzer_options(
     int argc, const char** argv) {
-    (void)cl::ParseCommandLineOptions(argc, argv, "hunter analyzer options");
+    (void)cl::ParseCommandLineOptions(argc,
+                                      argv,
+                                      "hunter analyzer engine options");
 
     return analyzer::AnalyzerOptions{widening_delay,
                                      max_widening_iterations,
@@ -85,7 +88,7 @@ analyzer::AnalyzerOptions get_analyzer_options() {
     int analyzer_argc = 0;
 
     // Dummy program name
-    for (const auto& arg : hunter::cl_opts::XcArgs) {
+    for (const auto& arg : hunter::analyzer::cl_opts::XcArgs) {
         analyzer_argv.push_back(arg.c_str());
     }
     analyzer_argv.push_back(nullptr); // Null-terminate the array
@@ -201,7 +204,7 @@ int main(int argc, const char** argv) {
 
     auto opts_parser = CommonOptionsParser::create(argc,
                                                    argv,
-                                                   hunter_category,
+                                                   hunter_analyzer_category,
                                                    cl::ZeroOrMore);
 
     if (!opts_parser) {
@@ -221,6 +224,11 @@ int main(int argc, const char** argv) {
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
+
+    // Notice: makes sure these are called
+    llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+    llvm::PrettyStackTraceProgram X(argc, argv);
+    llvm::llvm_shutdown_obj shutdown;
 
     auto enabled_checkers = get_enabled_checkers();
     auto enabled_analyses = get_directly_enabled_analyses();

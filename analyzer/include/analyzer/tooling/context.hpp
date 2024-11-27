@@ -90,7 +90,7 @@ class HunterContext {
     }
 
     /// \brief Get the current build directory.
-    [[nodiscard]] const std::string& get_cuurent_build_dir() const {
+    [[nodiscard]] const std::string& get_current_build_dir() const {
         return m_current_build_dir;
     }
 
